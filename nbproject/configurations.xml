@@ -86,5 +86,26 @@
       <item path="src/utils/utils.hpp" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
+    <conf name="ReleaseO" type="1">
+      <toolsSet>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <compileType>
+        <ccTool>
+          <commandLine>-std=c++11 -O2</commandLine>
+        </ccTool>
+        <linkerTool>
+          <commandLine>-O3</commandLine>
+        </linkerTool>
+      </compileType>
+      <item path="src/main.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/model/model.hpp" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/utils/utils.hpp" ex="false" tool="3" flavor2="0">
+      </item>
+    </conf>
   </confs>
 </configurationDescriptor>

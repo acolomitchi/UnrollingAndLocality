@@ -22,6 +22,14 @@ CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux/unrollingandlocality
 CND_PACKAGE_DIR_Release=dist/Release/GNU-Linux/package
 CND_PACKAGE_NAME_Release=unrollingandlocality.tar
 CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux/package/unrollingandlocality.tar
+# ReleaseO configuration
+CND_PLATFORM_ReleaseO=GNU-Linux
+CND_ARTIFACT_DIR_ReleaseO=dist/ReleaseO/GNU-Linux
+CND_ARTIFACT_NAME_ReleaseO=unrollingandlocality
+CND_ARTIFACT_PATH_ReleaseO=dist/ReleaseO/GNU-Linux/unrollingandlocality
+CND_PACKAGE_DIR_ReleaseO=dist/ReleaseO/GNU-Linux/package
+CND_PACKAGE_NAME_ReleaseO=unrollingandlocality.tar
+CND_PACKAGE_PATH_ReleaseO=dist/ReleaseO/GNU-Linux/package/unrollingandlocality.tar
 #
 # include compiler specific variables
 #
