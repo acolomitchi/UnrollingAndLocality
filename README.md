@@ -65,7 +65,7 @@ A (runtime) way of recursively computing the same, would be on the line of:
 ```
 const ndim=...; // number of dimensions
 
-function accumulator(index, stepsToGo, point a, point b) {
+accumulator(index, stepsToGo, point a, point b) {
   if(stepsToGo == 0) { // safety recursion stop
     return 0.0;
   }
@@ -93,19 +93,14 @@ unwound_euclid_dist(point a, point b) {
 }
 ```
 
-Using templates to implement the recursion and hoping that the C++ compiler 
-will be coerced to inline by optimization flags is exactly the
-`compile time loop unwinding` is about. 
 
-Before jumping into the code
-
-A note: examining the code above, one can really see that the only
+Before jumping into the code:<ol>
+<li>A note: examining the code above, one can really see that the only
 requirement against a `point` type is to provide the 
 'access by index operator', so any structure which implements
 `operator[]` will make a sufficiently-good point representation
-(including an array of an arithmetic type to hold the coordinates)
-
-Second, the `accumulator` function can be made generic enough to work
+(including an array of an arithmetic type to hold the coordinates)</li>
+<li>the `accumulator` function can be made generic enough to work
 not only the `sq_diff` but other functions as well - one will need just to pass
 the `sq_diff` (or other function) as a parameter.
 
@@ -117,7 +112,7 @@ the `sq_diff` (or other function) as a parameter.
  unwound_euclid_dist(point a, point b) {
    return sqrt(accumulator(0, ndim, sq_diff, a, b));
  } 
- // computes step of Manhattan distance along the `index` dimension
+ // computes the Manhattan distance along the `index` dimension
  abs_diff(index, point a, point b) {
    return abs(a[i]-b[i]);
  }
@@ -133,20 +128,22 @@ of the `accumulator` could be expressed by a signature like
 ```
 accumulator(begin_index, len, input_array, operation, operation_context)
 ```
-with
-
-* `begin_index - offset into the `array_argument` to start applying the
-   `operation` and accumulate the result
-* `len` - the number of steps to go, starting from the `begin_index`
-* `input_array` - any structure supporting the `[index]` operator and
-   acting as input
-* `operation` - the transformation to apply to each element of the
-  `input_array` before accumulating the results of this transformation;
-* `operation_context` - any additional information required for the `operation`
+with<ul>
+<li>`begin_index` - offset into the `array_argument` to start applying the
+   `operation` and accumulate the result</li>
+<li>`len` - the number of steps to go, starting from the `begin_index`</li>
+<li>`input_array` - any structure supporting the `[index]` operator and
+   acting as input</li>
+<li>`operation` - the transformation to apply to each element of the
+  `input_array` before accumulating the results of this transformation;</li>
+<li>`operation_context` - any additional information required for the `operation`
   to transform the input. In the most general case, the type of this
   parameter can be anything, it just so happens that in the case of `sq_diff`, 
   this context is  made from the second `point` (the one to calculate the
-  distance to).
+  distance to).</li>
+</ul>
+</li>
+</ol>
 
 So, now, the code... (btw, it's located in the `utils\utils.hpp` header).
 There's the need to express the `accumulator` and `sq_diff` functions in
