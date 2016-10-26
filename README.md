@@ -158,17 +158,17 @@ Therefore:
   as template parameters
 * rely on the 'template definition recursion' rather than runtime recursion
   (that's _compile time_ loop unwinding, right?)
-* as C++(11) does not allow partial specialization of function templates,
+* as C++ does not allow partial specialization of function templates,
   we'll need to deal with class templates and implement the runtime functionality
   as methods of these templates 
  
 ```C++
 
 template <
-  std::size_t N, // number of steps to go in the recursive definotion
+  std::size_t N, // number of steps to go in the recursive definition
   typename Result, // the result type of the accumulation
   typename container_type, // the input type. Expected to define the [] operator
-  std::size_t Offset, // offset from the start 
+  std::size_t Offset, // offset from the start where from to start accumulating
   template <
      // result type of the transformation
      typename R_type,
@@ -178,7 +178,7 @@ template <
      typename context_type, 
      // other types on which the transformation depends 
      typename...Other
-  > class op, // the `operation` type. Expecte to implement an `apply` static method
+  > class op, // the `operation` type. Expected to implement an `apply` static method, see the calling code below
   typename ctx_type, // the type of additional info that to be passed when 
                      // specializing the `op` 
   typename... opArgs // other types to pass at `op` specialization
@@ -189,10 +189,10 @@ template <
   ) {
     return
         op<Result, Offset, ctx_type, opArgs...>::apply(src, context) // one step...
-      + rec_accumulator< // ... added to the rest
-          N-1, Result, 
-          container_type, Offset+1, 
-          op, ctx_type, opArgs...
+      + rec_accumulator< // ... added to the rest recursivelly
+          N-1, Result, container_type, Offset+1, op, ctx_type, opArgs...
+        // ^                           ^ 
+        // +-- one step less to go     +-- One index to the right   
         >::accumulate(
           src, context
         )
@@ -219,7 +219,7 @@ struct rec_accumulator<1, Result, container_type, Offset, op, ctx_type, opArgs..
       const container_type& c, 
       const ctx_type& context
   ) {
-    // one step without adding "the rest", as "the rest" will be zero
+    // one step without adding "the rest", because "the rest" will be zero
     return op<Result, Offset, ctx_type, opArgs...>::apply(c, context);
   }
 };
@@ -246,10 +246,10 @@ struct rec_accumulator<0, Result, container_type, Offset, op, ctx_type, opArgs..
 };
 ```
 
-<h2 id='data-locality'>CPU caches data locality</h2>
-Well... not exactly. Yes, choosing different storage layouts will influence
-how the data is brought into CPU caches, but... no, this is not actually an
-proper experiment to actually _determine_ the CPU cache hits/misses rates and/or
+<h2 id='data-locality'>Data locality in CPU caches</h2>
+Well... not exactly.<br>Yes, choosing different storage layouts will influence
+how the data is brought into CPU caches, but... no, this is not actually a
+proper experiment to _actually determine_ the CPU cache hits/misses rates and/or
 out-of-order execution.
 
 [To be continued]
