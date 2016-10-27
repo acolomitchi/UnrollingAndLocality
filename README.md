@@ -36,7 +36,7 @@ analysis is available, only some preliminary observations and
 *a stable piece of code*. In regards with the analysis, I do intend to 
 look a bit more into it if the conditions allow in the future.
 
-<h2 id='look-unwinding'>The compile-time loop unwinding - the technique</h2>
+<h2 id='loop-unwinding'>The compile-time loop unwinding - the technique</h2>
 
 Suppose you have a method that computes the squared difference between the 
 coordinates of two N-dim points along one of the axis/dimension (pseudo-code):
@@ -193,9 +193,7 @@ template <
           N-1, Result, container_type, Offset+1, op, ctx_type, opArgs...
         // ^                           ^ 
         // +-- one step less to go     +-- One index to the right   
-        >::accumulate(
-          src, context
-        )
+        >::accumulate(src, context)
     ;
   }
 };
@@ -246,11 +244,82 @@ struct rec_accumulator<0, Result, container_type, Offset, op, ctx_type, opArgs..
 };
 ```
 
-<h2 id='data-locality'>Data locality in CPU caches</h2>
+<h2 id='data-locality'>Data locality in CPU's caches</h2>
 Well... not exactly.<br>Yes, choosing different storage layouts will influence
 how the data is brought into CPU caches, but... no, this is not actually a
 proper experiment to _actually determine_ the CPU cache hits/misses rates and/or
 out-of-order execution.
 
-[To be continued]
+The approach taken is to store the points in a collection in two different ways:
+
+1. packed-points approach - storing `ndpoint` instances in a `std::vector`
+2. parallel lines of coordinates - storing the coordinates along each dimension
+   on a separate arrays of the primitive type 
+   (SFINAE restricted to `std::is_floating_point`), arrays which 'run in parallel'.
+   The 'points' are accessible by a 'point iterator' - a read-only iterator that
+   only stores the 'current index' and provides
+   the `operator[]` façade required to bring the coordinates of a (stored)
+   point in a way the distance computing algorithms [above](#loop-unwinding)
+   expects them for consumption.
+
+The classes to support the two approaches are located in the 
+`model\model.hpp` header, namely the 
+
+1. `template <typename R, std::size_t N> class ndpoint` - the structured/packed
+    approach to N-dimensional point (`R` coordinate representation type, 
+    `N` - number of dimensions fixed at compile time);
+2. `template <typename R, std::size_t ndim> class ParallelPointStorage` and its
+   (inner declared class) `ParallelPointStorage::PointIt` adaptor for the
+   `operator[]` over the coordinates of a point (again, `R` coordinate 
+   representation type, `ndim` - number of dimensions).
+
+The main idea behind the 'parallel lines of coordinates' approach: an attempt
+to... ummm... 'entice' the 
+[out-of-order execution](https://en.wikipedia.org/wiki/Out-of-order_execution) 
+to kick in and do part of the work along some dimensions (having the required 
+memory loaded into the CPU cache) even when the memory for the other
+dimensions isn't yet cache-available.<br>By contrast,
+the 'packed approach' needs all the data for the two points in CPU cache to
+be able to compute the distance; so the 'packed approach' may show 
+signs of waiting time in some conditions.<br>
+(Yes, I _do know_ that this is highly speculative and there are more
+factors coming into play, factors that one cannot control at the software
+level - I don't pretend this to be a systematic study, much less a comprehensive
+one).
+
+<h2 id='results'>Results</h2>
+Too early to have definitive answers: when conditions will allow, I intend
+to explore the effects of 
+ `{optimization flags} x {number of dimensions} x {number of points in set}`
+for at least some machines I have available (all running Linux/gcc).
+
+For the moment (late Oct 2016), I can say only the followings:
+
+- for `ndim=3`, all the algorithms run **slower** than for `ndim=8`, no matter
+  the optimization flags!!! (struct alignment playing a role into it???)
+- there seems to be combination of optimization flags/`ndim` for which the 
+  'loop unwinding' produces code that is faster than the iterated approach to 
+  distance computation (e.g. `-O2` with a `ndim=8`)
+- there are a set of conditions in which the 'parallel storage' do run faster
+  on distances computed iteratively (and yet, for 'unrolled loops', looks
+  that the 'parallel storage' is always slower than the 'packed approach')
+- the loop unwinding seems to interfere badly with `-O3` optimization - 
+  the performance of compile-time unrolled loops solution seems to suffer for a 
+  large range of `ndim` values
+- on one of my laptops, the performance degrade as the test progresses and the
+  CPU temperature raises. I wonder this will show a desktop with beefed
+  up CPU cooler that I have;
+- as expected, with debug builds, the 'loop unwinding' approach will
+  run much slower (no inlining, therefore the recursion happens runtime)
+
+
+== TODO
+
+1. enhance the `main` function (the test driver) to output the info 
+   in a format making the post-processing (stats, plotting) easier
+2. write a (sh/bash) harness to compile with different optimization
+   flags and `ndim` values (of course, `ndim` will need to be `#define`-d).
+   Possibly, make the harness kick off the testing and collate the results
+   (maybe some extra tooling will be needed for result collation?)
+
 
