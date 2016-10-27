@@ -4,13 +4,14 @@ Experiments in C++ on template loop unwinding and data locality effects on perfo
 ## In brief
 
 Some experiments on the effects on performance of:
+
 1. data representation influence on CPU cache(s) data locality - 
    I felt the need of seeing some numbers after watching 
    [this part](https://youtu.be/fHNmRkzxHWs?t=2081) of 
    Chandler Carruth's 
    "Efficiency with Algorithms, Performance with Data Structures" presentation
    at CPPcon 2014; and
-2. explicit loop unwinding by using of C++ templates.
+2. explicit loop unwinding at compile-time by using of C++ templates.
 
 **The playground**: have different representations of a `N-dimensional point` and
 a collection thereof and compute all the (distinct) distances between these
@@ -26,7 +27,8 @@ the N-dim point collection either as:
 2. a set of arrays of coordinates, each array containing the coordinates
    pertaining to one axis/dimension for all points.
 
-(see [row-major vs column major](https://en.wikipedia.org/wiki/Row-major_order))
+(similar to [row-major vs column major](https://en.wikipedia.org/wiki/Row-major_order),
+but not quite the same)
 
 Don't expect deep-digging into the guts of the CPU's caches, not even detailed
 dissection (by instrumentation) of how much to CPU time different parts of the
@@ -95,7 +97,7 @@ unwound_euclid_dist(point a, point b) {
 
 
 Before jumping into the code:<ol>
-<li>A note: examining the code above, one can really see that the only
+<li>A note: looking over the pseudo-code above, one can really see that the only
 requirement against a `point` type is to provide the 
 'access by index operator', so any structure which implements
 `operator[]` will make a sufficiently-good point representation
@@ -138,7 +140,7 @@ with<ul>
   `input_array` before accumulating the results of this transformation;</li>
 <li>`operation_context` - any additional information required for the `operation`
   to transform the input. In the most general case, the type of this
-  parameter can be anything, it just so happens that in the case of `sq_diff`, 
+  parameter can be anything it just so happens that in the case of `sq_diff`, 
   this context is  made from the second `point` (the one to calculate the
   distance to).</li>
 </ul>
@@ -154,7 +156,7 @@ a way that will.. well... compel the compiler to:
    be runtime specific: namely the two points.
 
 Therefore:
-* express them in the form of templates, taking the dimensions and indexed/offset
+* express them in the form of templates, taking the dimensions and indexes/offsets
   as template parameters
 * rely on the 'template definition recursion' rather than runtime recursion
   (that's _compile time_ loop unwinding, right?)
@@ -254,7 +256,7 @@ The approach taken is to store the points in a collection in two different ways:
 
 1. packed-points approach - storing `ndpoint` instances in a `std::vector`
 2. parallel lines of coordinates - storing the coordinates along each dimension
-   on a separate arrays of the primitive type 
+   in a separate arrays of the primitive type 
    (SFINAE restricted to `std::is_floating_point`), arrays which 'run in parallel'.
    The 'points' are accessible by a 'point iterator' - a read-only iterator that
    only stores the 'current index' and provides
@@ -281,10 +283,10 @@ memory loaded into the CPU cache) even when the memory for the other
 dimensions isn't yet cache-available.<br>By contrast,
 the 'packed approach' needs all the data for the two points in CPU cache to
 be able to compute the distance; so the 'packed approach' may show 
-signs of waiting time in some conditions.<br>
-(Yes, I _do know_ that this is highly speculative and there are more
+signs of waiting time in some conditions
+(yes, I _do know_ that this is highly speculative and there are more
 factors coming into play, factors that one cannot control at the software
-level - I don't pretend this to be a systematic study, much less a comprehensive
+level; I don't pretend this to be a systematic study, much less a comprehensive
 one).
 
 <h2 id='results'>Results</h2>
@@ -313,7 +315,7 @@ For the moment (late Oct 2016), I can say only the followings:
   run much slower (no inlining, therefore the recursion happens runtime)
 
 
-== TODO
+## TODO
 
 1. enhance the `main` function (the test driver) to output the info 
    in a format making the post-processing (stats, plotting) easier
